@@ -1,0 +1,26 @@
+global:
+  scrape_interval:     15s
+  evaluation_interval: 15s
+  external_labels:
+    monitor: nexus-ai
+
+scrape_configs:
+  - job_name: nexus-backend
+    static_configs:
+      - targets: [nexus-backend:3002]
+    metrics_path: /metrics
+    scrape_interval: 15s
+
+  - job_name: redis
+    static_configs:
+      - targets: [redis:6379]
+    # Requires redis_exporter sidecar for full metrics
+
+  - job_name: postgres
+    static_configs:
+      - targets: [postgres:5432]
+    # Requires postgres_exporter sidecar for full metrics
+
+  - job_name: prometheus
+    static_configs:
+      - targets: [localhost:9090]

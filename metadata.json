@@ -1,0 +1,6 @@
+{
+  "name": "Nexus AI: Creative Suite",
+  "description": "An immersive, all-in-one AI platform for content repurposing, advanced summarization, image generation, voice synthesis, and more.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["AI Content Repurposing", "AI Image Generation", "Voice Synthesis", "Translation", "Sentiment Analysis"]
+}

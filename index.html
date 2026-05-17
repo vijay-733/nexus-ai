@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nexus AI</title>
+    <script>
+      // On tunnel domains, fire a request with bypass-tunnel-reminder so Cloudflare
+      // sets its bypass cookie. After this runs once the interstitial never shows again
+      // for this tunnel URL in this browser session.
+      (function () {
+        var h = location.hostname;
+        if (h.endsWith('.trycloudflare.com') || h.endsWith('.loca.lt') || h.endsWith('.ngrok-free.app')) {
+          fetch('/ping', { headers: { 'bypass-tunnel-reminder': '1' } }).catch(function () {});
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+

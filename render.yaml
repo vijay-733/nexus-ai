@@ -1,0 +1,35 @@
+services:
+  - type: web
+    name: nexus-ai-backend
+    runtime: node
+    region: singapore
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health/live
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: SERVER_PORT
+        value: 3002
+      - key: PORT
+        value: 3002
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRY
+        value: 7d
+      # Set these in Render dashboard — leave blank to use free Pollinations fallback
+      - key: OPENAI_API_KEY
+        value: ""
+      - key: GEMINI_API_KEY
+        value: ""
+      - key: STABILITY_API_KEY
+        value: ""
+      # Optional — leave blank for in-memory fallback
+      - key: POSTGRES_URL
+        value: ""
+      - key: REDIS_URL
+        value: ""
+      # Set to your Netlify app URL after deploying frontend
+      - key: ALLOWED_ORIGIN
+        value: ""

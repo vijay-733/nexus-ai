@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nexus-config
+  namespace: nexus-ai
+data:
+  NODE_ENV:     "production"
+  SERVER_PORT:  "3002"
+  APP_URL:      "https://your-domain.com"
+  DISABLE_HMR:  "true"
+  LOG_LEVEL:    "info"
+---
+# Secret template — populate with actual values before deploying
+# kubectl create secret generic nexus-secrets -n nexus-ai \
+#   --from-literal=JWT_SECRET=<64-char-hex> \
+#   --from-literal=OPENAI_API_KEY=<key> \
+#   --from-literal=ANTHROPIC_API_KEY=<key> \
+#   --from-literal=STABILITY_API_KEY=<key> \
+#   --from-literal=POSTGRES_URL=<url> \
+#   --from-literal=REDIS_URL=<url>
+apiVersion: v1
+kind: Secret
+metadata:
+  name: nexus-secrets
+  namespace: nexus-ai
+type: Opaque
+stringData:
+  JWT_SECRET:        "REPLACE_WITH_64_CHAR_HEX"
+  OPENAI_API_KEY:    ""
+  ANTHROPIC_API_KEY: ""
+  STABILITY_API_KEY: ""
+  POSTGRES_URL:      "postgresql://nexus:nexus_dev@nexus-postgres:5432/nexus"
+  REDIS_URL:         "redis://nexus-redis:6379"

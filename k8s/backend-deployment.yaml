@@ -1,0 +1,106 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nexus-backend
+  namespace: nexus-ai
+  labels:
+    app:     nexus-backend
+    version: "1.0"
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nexus-backend
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge:       1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app:     nexus-backend
+        version: "1.0"
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port:   "3002"
+        prometheus.io/path:   "/metrics"
+    spec:
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: nexus-backend
+          image: nexus-ai/backend:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3002
+              protocol:      TCP
+          envFrom:
+            - configMapRef:
+                name: nexus-config
+          env:
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: nexus-secrets
+                  key:  JWT_SECRET
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: nexus-secrets
+                  key:  OPENAI_API_KEY
+            - name: ANTHROPIC_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: nexus-secrets
+                  key:  ANTHROPIC_API_KEY
+            - name: STABILITY_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: nexus-secrets
+                  key:  STABILITY_API_KEY
+            - name: POSTGRES_URL
+              valueFrom:
+                secretKeyRef:
+                  name: nexus-secrets
+                  key:  POSTGRES_URL
+            - name: REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: nexus-secrets
+                  key:  REDIS_URL
+          resources:
+            requests:
+              cpu:    "250m"
+              memory: "512Mi"
+            limits:
+              cpu:    "1000m"
+              memory: "1Gi"
+          readinessProbe:
+            httpGet:
+              path: /health/live
+              port: 3002
+            initialDelaySeconds: 10
+            periodSeconds:       5
+            failureThreshold:    3
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: 3002
+            initialDelaySeconds: 20
+            periodSeconds:       15
+            failureThreshold:    3
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sh", "-c", "sleep 5"]
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key:      app
+                      operator: In
+                      values:   [nexus-backend]
+                topologyKey: kubernetes.io/hostname
