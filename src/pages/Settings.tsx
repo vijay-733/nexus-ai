@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { motion } from 'motion/react';
-import { Settings as SettingsIcon, Key, Bell, Monitor, Shield, Trash2, Save, Eye, EyeOff } from 'lucide-react';
+import { Settings as SettingsIcon, Key, Bell, Monitor, Shield, Trash2, Save, Eye, EyeOff, Sun, Moon, SunMoon } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
+import { useAppStore } from '../store/appStore';
+import type { Theme } from '../store/appStore';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
 import { Card, CardHeader, CardContent } from '../components/ui/Card';
@@ -52,6 +54,12 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
   );
 }
 
+const THEME_OPTIONS: { id: Theme; label: string; icon: React.ElementType; description: string }[] = [
+  { id: 'dark',   label: 'Dark',   icon: Moon,    description: 'Classic dark workspace' },
+  { id: 'light',  label: 'Light',  icon: Sun,     description: 'Clean light interface'  },
+  { id: 'system', label: 'System', icon: SunMoon, description: 'Follows OS preference'  },
+];
+
 const PREFS_KEY = 'nexus_prefs';
 
 function loadPrefs() {
@@ -60,9 +68,10 @@ function loadPrefs() {
 
 export default function Settings() {
   const { user, logout } = useAuthStore();
+  const { theme, setTheme } = useAppStore();
   const prefs = loadPrefs();
-  const [apiKey,       setApiKey]       = useState<string>(localStorage.getItem('nexus_openai_key') ?? '');
-  const [showKey,      setShowKey]      = useState(false);
+  const [apiKey,        setApiKey]        = useState<string>(localStorage.getItem('nexus_openai_key') ?? '');
+  const [showKey,       setShowKey]       = useState(false);
   const [notifications, setNotifications] = useState<boolean>(prefs.notifications ?? true);
   const [streamOutput,  setStreamOutput]  = useState<boolean>(prefs.streamOutput  ?? true);
   const [autoSave,      setAutoSave]      = useState<boolean>(prefs.autoSave      ?? true);
@@ -98,6 +107,46 @@ export default function Settings() {
         </FieldRow>
       </Section>
 
+      {/* Appearance */}
+      <Section title="Appearance" icon={Monitor}>
+        <div className="space-y-2">
+          <p className="text-xs text-[var(--color-text-muted)]">Theme</p>
+          <div className="grid grid-cols-3 gap-2">
+            {THEME_OPTIONS.map(({ id, label, icon: Icon, description }) => {
+              const active = theme === id;
+              return (
+                <button
+                  key={id}
+                  onClick={() => setTheme(id)}
+                  className={cn(
+                    'flex flex-col items-center gap-2 px-3 py-3.5 rounded-[11px] border transition-all duration-150 text-center',
+                    active
+                      ? 'border-[var(--color-nexus-accent)] bg-[var(--color-nexus-accent-3)]'
+                      : 'border-[var(--color-nexus-border)] bg-[var(--color-nexus-elevated)] hover:border-[var(--color-nexus-border-2)]'
+                  )}
+                >
+                  <Icon
+                    size={16}
+                    style={{ color: active ? 'var(--color-nexus-accent)' : 'var(--color-text-muted)' }}
+                  />
+                  <div>
+                    <p
+                      className="text-xs font-semibold"
+                      style={{ color: active ? 'var(--color-nexus-accent)' : 'var(--color-text-primary)' }}
+                    >
+                      {label}
+                    </p>
+                    <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5 leading-tight">
+                      {description}
+                    </p>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </Section>
+
       {/* API Keys */}
       <Section title="API Keys" icon={Key}>
         <div className="space-y-1.5">
@@ -126,7 +175,7 @@ export default function Settings() {
       </Section>
 
       {/* Preferences */}
-      <Section title="Preferences" icon={Monitor}>
+      <Section title="Preferences" icon={Bell}>
         <FieldRow label="Stream output" description="Show agent responses in real-time">
           <Toggle checked={streamOutput} onChange={setStreamOutput} />
         </FieldRow>

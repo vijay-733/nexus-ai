@@ -13,6 +13,7 @@ import { dbg } from './debugStore';
 
 export type SessionStatus = 'idle' | 'planning' | 'running' | 'streaming' | 'done' | 'error' | 'partial';
 export type RunMode        = 'react' | 'multi' | 'orchestrate' | 'image';
+export type Theme          = 'dark' | 'light' | 'system';
 export type Page = 'dashboard' | 'workspace' | 'workflows' | 'history' | 'traces' | 'memory' | 'agents' | 'observability' | 'billing' | 'settings';
 
 // ── Unified step format ───────────────────────────────────────────────────────
@@ -152,6 +153,7 @@ interface AppState {
   // UI
   isMobile:        boolean;
   mobileNavOpen:   boolean;
+  theme:           Theme;
 
   // Navigation actions
   setPendingTask:  (task: string, mode: RunMode, workflowLabel?: string) => void;
@@ -164,6 +166,7 @@ interface AppState {
   setRunMode:      (mode: RunMode) => void;
   setMobile:       (mobile: boolean) => void;
   toggleMobileNav: () => void;
+  setTheme:        (theme: Theme) => void;
 
   // Execution lifecycle
   startSession:          (task: string, mode: RunMode, workflowLabel?: string) => string;
@@ -193,6 +196,7 @@ export const useAppStore = create<AppState>()(
       pendingTask:    null,
       isMobile:       typeof window !== 'undefined' && window.innerWidth < 768,
       mobileNavOpen:  false,
+      theme:          'dark',
 
       setPendingTask:  (task, mode, workflowLabel) => set({ pendingTask: { task, mode, workflowLabel } }),
       clearPendingTask: () => set({ pendingTask: null }),
@@ -204,6 +208,7 @@ export const useAppStore = create<AppState>()(
       setRunMode:      (mode)  => set({ runMode: mode }),
       setMobile:       (m)     => set({ isMobile: m }),
       toggleMobileNav: ()      => set(s => ({ mobileNavOpen: !s.mobileNavOpen })),
+      setTheme:        (theme) => set({ theme }),
 
       startSession: (task, mode, workflowLabel) => {
         const id = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
@@ -417,6 +422,7 @@ export const useAppStore = create<AppState>()(
         // pendingTask is intentionally excluded — it's ephemeral and must not survive a reload.
         const base = {
           runMode:        state.runMode,
+          theme:          state.theme,
           sessionHistory: state.sessionHistory
             .filter(s => s.status !== 'planning' && s.status !== 'running')
             .slice(0, 20),

@@ -15,7 +15,7 @@ interface AppShellProps {
 }
 
 export function AppShell({ children }: AppShellProps) {
-  const { setMobile } = useAppStore();
+  const { setMobile, theme } = useAppStore();
   const connectionState = useServerHealth();
   useKeyboard();
 
@@ -24,6 +24,21 @@ export function AppShell({ children }: AppShellProps) {
     window.addEventListener('resize', handler);
     return () => window.removeEventListener('resize', handler);
   }, [setMobile]);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    if (theme === 'light') {
+      root.setAttribute('data-theme', 'light');
+    } else if (theme === 'system') {
+      const mq = window.matchMedia('(prefers-color-scheme: dark)');
+      const apply = () => root.setAttribute('data-theme', mq.matches ? 'dark' : 'light');
+      apply();
+      mq.addEventListener('change', apply);
+      return () => mq.removeEventListener('change', apply);
+    } else {
+      root.setAttribute('data-theme', 'dark');
+    }
+  }, [theme]);
 
   return (
     <div className="flex h-screen bg-[var(--color-nexus-dark)] overflow-hidden">
