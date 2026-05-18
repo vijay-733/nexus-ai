@@ -120,7 +120,9 @@ export function streamAgent(
     externalSignal.addEventListener('abort', () => ac.abort(), { once: true });
   }
 
-  const token = localStorage.getItem('nexus_token');
+  const token     = localStorage.getItem('nexus_token');
+  const geminiKey = localStorage.getItem('nexus_gemini_key');
+  const openaiKey = localStorage.getItem('nexus_openai_key');
   dbg('stream', `START mode=${mode}`, { task: (body.task ?? '').slice(0, 60) });
 
   (async () => {
@@ -132,7 +134,9 @@ export function streamAgent(
         headers: {
           'Content-Type':           'application/json',
           'bypass-tunnel-reminder': 'true',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...(token     ? { Authorization:  `Bearer ${token}` } : {}),
+          ...(geminiKey ? { 'x-gemini-key': geminiKey }        : {}),
+          ...(openaiKey ? { 'x-openai-key': openaiKey }        : {}),
         },
         body: JSON.stringify(body),
       });

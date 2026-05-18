@@ -38,6 +38,7 @@ import { billingRouter }       from './routes/billing.js';
 import { queueRouter }         from './routes/queue.js';
 import { streamRouter }        from './routes/stream.js';
 import { authenticate }        from './middleware/authenticate.js';
+import { requestContext }      from './context/requestContext.js';
 
 // ── Core subsystem init ───────────────────────────────────────────────────────
 import { initMemory }          from './memory/memoryManager.js';
@@ -118,7 +119,7 @@ app.use((req, res, next) => {
     res.setHeader('Access-Control-Allow-Origin',      origin);
     res.setHeader('Access-Control-Allow-Credentials', 'true');
     res.setHeader('Access-Control-Allow-Methods',     'GET,POST,PUT,PATCH,DELETE,OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers',     'Content-Type,Authorization,bypass-tunnel-reminder');
+    res.setHeader('Access-Control-Allow-Headers',     'Content-Type,Authorization,bypass-tunnel-reminder,x-gemini-key,x-openai-key');
   }
   if (req.method === 'OPTIONS') { res.status(204).end(); return; }
   next();
@@ -129,6 +130,17 @@ app.get('/favicon.ico', (_req, res) => res.status(204).end());
 
 app.use(express.json({ limit: '10mb' }));
 app.use(generalLimiter);
+
+// Per-request API key context — lets users supply their own keys via headers
+// without them ever being logged or stored server-side.
+app.use((req, _res, next) => {
+  const geminiKey = req.headers['x-gemini-key'] as string | undefined;
+  const openaiKey = req.headers['x-openai-key']  as string | undefined;
+  requestContext.run(
+    { geminiKey: geminiKey?.trim() || undefined, openaiKey: openaiKey?.trim() || undefined },
+    next,
+  );
+});
 
 // ── Core routes ───────────────────────────────────────────────────────────────
 app.use('/auth',           authRouter);

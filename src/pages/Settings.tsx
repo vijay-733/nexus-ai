@@ -70,8 +70,10 @@ export default function Settings() {
   const { user, logout } = useAuthStore();
   const { theme, setTheme } = useAppStore();
   const prefs = loadPrefs();
-  const [apiKey,        setApiKey]        = useState<string>(localStorage.getItem('nexus_openai_key') ?? '');
-  const [showKey,       setShowKey]       = useState(false);
+  const [geminiKey,     setGeminiKey]     = useState<string>(localStorage.getItem('nexus_gemini_key') ?? '');
+  const [openaiKey,     setOpenaiKey]     = useState<string>(localStorage.getItem('nexus_openai_key') ?? '');
+  const [showGemini,    setShowGemini]    = useState(false);
+  const [showOpenai,    setShowOpenai]    = useState(false);
   const [notifications, setNotifications] = useState<boolean>(prefs.notifications ?? true);
   const [streamOutput,  setStreamOutput]  = useState<boolean>(prefs.streamOutput  ?? true);
   const [autoSave,      setAutoSave]      = useState<boolean>(prefs.autoSave      ?? true);
@@ -79,8 +81,10 @@ export default function Settings() {
 
   const handleSave = () => {
     localStorage.setItem(PREFS_KEY, JSON.stringify({ notifications, streamOutput, autoSave }));
-    if (apiKey) localStorage.setItem('nexus_openai_key', apiKey);
-    else localStorage.removeItem('nexus_openai_key');
+    if (geminiKey) localStorage.setItem('nexus_gemini_key', geminiKey);
+    else           localStorage.removeItem('nexus_gemini_key');
+    if (openaiKey) localStorage.setItem('nexus_openai_key', openaiKey);
+    else           localStorage.removeItem('nexus_openai_key');
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };
@@ -149,27 +153,69 @@ export default function Settings() {
 
       {/* API Keys */}
       <Section title="API Keys" icon={Key}>
+        <p className="text-[10px] text-[var(--color-text-muted)] -mt-1">
+          Stored locally in your browser only. Sent directly to AI providers — never logged on our servers.
+        </p>
+
+        {/* Gemini */}
         <div className="space-y-1.5">
-          <label className="text-xs font-medium text-[var(--color-text-secondary)]">
-            OpenAI API Key
-          </label>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-medium text-[var(--color-text-secondary)]">Google Gemini API Key</span>
+            {geminiKey && (
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium"
+                style={{ background: 'var(--color-nexus-accent-3)', color: 'var(--color-nexus-accent)' }}>
+                active
+              </span>
+            )}
+          </div>
           <div className="relative">
             <input
-              type={showKey ? 'text' : 'password'}
-              value={apiKey}
-              onChange={e => setApiKey(e.target.value)}
+              type={showGemini ? 'text' : 'password'}
+              value={geminiKey}
+              onChange={e => setGeminiKey(e.target.value)}
+              placeholder="AIza..."
+              className="w-full h-9 px-3 pr-9 rounded-lg text-sm bg-[var(--color-nexus-elevated)] border border-[var(--color-nexus-border)] text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:border-[var(--color-nexus-accent)] focus:outline-none font-mono"
+            />
+            <button
+              onClick={() => setShowGemini(v => !v)}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]"
+            >
+              {showGemini ? <EyeOff size={14} /> : <Eye size={14} />}
+            </button>
+          </div>
+          <p className="text-[10px] text-[var(--color-text-muted)]">
+            Powers all text generation. Get one free at <span className="text-[var(--color-nexus-accent)]">aistudio.google.com</span>
+          </p>
+        </div>
+
+        {/* OpenAI */}
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-medium text-[var(--color-text-secondary)]">OpenAI API Key</span>
+            {openaiKey && (
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium"
+                style={{ background: 'var(--color-nexus-blue-dim)', color: 'var(--color-nexus-blue)' }}>
+                active
+              </span>
+            )}
+          </div>
+          <div className="relative">
+            <input
+              type={showOpenai ? 'text' : 'password'}
+              value={openaiKey}
+              onChange={e => setOpenaiKey(e.target.value)}
               placeholder="sk-..."
               className="w-full h-9 px-3 pr-9 rounded-lg text-sm bg-[var(--color-nexus-elevated)] border border-[var(--color-nexus-border)] text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:border-[var(--color-nexus-accent)] focus:outline-none font-mono"
             />
             <button
-              onClick={() => setShowKey(!showKey)}
+              onClick={() => setShowOpenai(v => !v)}
               className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]"
             >
-              {showKey ? <EyeOff size={14} /> : <Eye size={14} />}
+              {showOpenai ? <EyeOff size={14} /> : <Eye size={14} />}
             </button>
           </div>
           <p className="text-[10px] text-[var(--color-text-muted)]">
-            Stored locally in your browser. Never sent to our servers.
+            Optional. Used for GPT-4o-mini image generation and text (takes priority over Gemini).
           </p>
         </div>
       </Section>

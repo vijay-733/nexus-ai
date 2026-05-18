@@ -2,6 +2,7 @@ import { toolRegistry, type ToolParams, type ToolResult } from './registry.js';
 import {
   callOpenAIText, callGeminiText, callPollinationsText,
 } from '../services/modelRouter.js';
+import { getRequestContext } from '../context/requestContext.js';
 import { logger } from '../utils/logger.js';
 
 const SYS_DEFAULT = `You are an expert AI assistant. Produce comprehensive, well-structured responses.
@@ -108,11 +109,13 @@ function inlineFallback(task: string): string {
 }
 
 async function run(p: ToolParams): Promise<ToolResult> {
-  const ok  = process.env.OPENAI_API_KEY?.trim();
-  const gk  = process.env.GEMINI_API_KEY?.trim();
+  const ctx = getRequestContext();
+  // User-supplied keys (from x-openai-key / x-gemini-key headers) take priority
+  const ok  = ctx.openaiKey || process.env.OPENAI_API_KEY?.trim();
+  const gk  = ctx.geminiKey || process.env.GEMINI_API_KEY?.trim();
   const sys = (p.systemPrompt as string | undefined) ?? pickSystemPrompt(p.prompt);
 
-  logger.info('text-tool', `provider=${p.provider} hasOpenAI=${!!ok} hasGemini=${!!gk}`);
+  logger.info('text-tool', `provider=${p.provider} hasOpenAI=${!!ok} hasGemini=${!!gk} src=${ctx.geminiKey ? 'header' : 'env'}`);
 
   // 1 — OpenAI
   if (ok) {

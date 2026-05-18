@@ -21,14 +21,18 @@ async function requestOnce<T>(
   options?: RequestInit,
   signal?:  AbortSignal,
 ): Promise<T> {
-  const token = localStorage.getItem('nexus_token');
+  const token     = localStorage.getItem('nexus_token');
+  const geminiKey = localStorage.getItem('nexus_gemini_key');
+  const openaiKey = localStorage.getItem('nexus_openai_key');
   const res = await fetch(`${BASE}${path}`, {
     ...options,
     signal,
     headers: {
-      'Content-Type':          'application/json',
+      'Content-Type':           'application/json',
       'bypass-tunnel-reminder': 'true',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(token     ? { Authorization:  `Bearer ${token}` } : {}),
+      ...(geminiKey ? { 'x-gemini-key': geminiKey }        : {}),
+      ...(openaiKey ? { 'x-openai-key': openaiKey }        : {}),
       ...(options?.headers ?? {}),
     },
   });
