@@ -9,7 +9,8 @@ import { useAppStore, normalizeReActStep, normalizeStepResult } from '../store/a
 import { useAuthStore } from '../store/authStore';
 import { agentApi, type ReActStep, type StepResult } from '../lib/api';
 import { streamAgent, type StepStartPayload } from '../lib/streamingApi';
-import { streamGeminiDirect, getGeminiKey } from '../lib/geminiDirectClient';
+import { streamGeminiDirect, getGeminiKey }   from '../lib/geminiDirectClient';
+import { streamOpenAIDirect, getOpenAIKey }   from '../lib/openaiDirectClient';
 import { AgentInput } from '../components/workspace/AgentInput';
 import { ExecutionTimeline } from '../components/workspace/ExecutionTimeline';
 import { DebugPanel } from '../components/workspace/DebugPanel';
@@ -159,18 +160,24 @@ export default function Workspace() {
       return;
     }
 
-    // ── Gemini direct path ─────────────────────────────────────────────────────
-    // When the user has a Gemini key in Settings, call the Gemini API directly
-    // from the browser. No backend needed — works instantly, no deployment required.
-    if (getGeminiKey()) {
-      dbg('lifecycle', 'using Gemini direct (browser→Gemini)', { sessionId });
-      const cancel = streamGeminiDirect(task, {
+    // ── Direct API paths (browser → AI provider, no backend needed) ──────────
+    // Priority: OpenAI key → Gemini key → backend fallback
+    // Whichever key the user adds in Settings works instantly, no deployment needed.
+    const directClient = getOpenAIKey()
+      ? { fn: streamOpenAIDirect, label: 'OpenAI GPT-4o mini' }
+      : getGeminiKey()
+      ? { fn: streamGeminiDirect, label: 'Gemini 2.5 Flash' }
+      : null;
+
+    if (directClient) {
+      dbg('lifecycle', `using ${directClient.label} direct`, { sessionId });
+      const cancel = directClient.fn(task, {
         onStep: step => {
-          dbg('store', `gemini appendStreamStep ${step.stepId}`, { status: step.status });
+          dbg('store', `direct appendStreamStep ${step.stepId}`, { status: step.status, provider: step.provider });
           appendStreamStep(sessionId, step);
         },
         onDone: result => {
-          dbg('store', 'gemini completeSession', { sessionId, durationMs: result.durationMs });
+          dbg('store', 'direct completeSession', { sessionId, durationMs: result.durationMs });
           cancelStreamRef.current = null;
           completeSession(sessionId, result);
           refreshUser();
@@ -178,7 +185,7 @@ export default function Workspace() {
           toast.success(`Task completed${dur}`);
         },
         onError: error => {
-          dbg('error', `gemini onError: ${error}`, { sessionId });
+          dbg('error', `direct onError: ${error}`, { sessionId });
           cancelStreamRef.current = null;
           const msg = error.length > 300 ? error.slice(0, 300) + '…' : error;
           failSession(sessionId, msg);
