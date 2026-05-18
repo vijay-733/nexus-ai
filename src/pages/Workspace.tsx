@@ -9,6 +9,7 @@ import { useAppStore, normalizeReActStep, normalizeStepResult } from '../store/a
 import { useAuthStore } from '../store/authStore';
 import { agentApi, type ReActStep, type StepResult } from '../lib/api';
 import { streamAgent, type StepStartPayload } from '../lib/streamingApi';
+import { streamGeminiDirect, getGeminiKey } from '../lib/geminiDirectClient';
 import { AgentInput } from '../components/workspace/AgentInput';
 import { ExecutionTimeline } from '../components/workspace/ExecutionTimeline';
 import { DebugPanel } from '../components/workspace/DebugPanel';
@@ -158,6 +159,37 @@ export default function Workspace() {
       return;
     }
 
+    // ── Gemini direct path ─────────────────────────────────────────────────────
+    // When the user has a Gemini key in Settings, call the Gemini API directly
+    // from the browser. No backend needed — works instantly, no deployment required.
+    if (getGeminiKey()) {
+      dbg('lifecycle', 'using Gemini direct (browser→Gemini)', { sessionId });
+      const cancel = streamGeminiDirect(task, {
+        onStep: step => {
+          dbg('store', `gemini appendStreamStep ${step.stepId}`, { status: step.status });
+          appendStreamStep(sessionId, step);
+        },
+        onDone: result => {
+          dbg('store', 'gemini completeSession', { sessionId, durationMs: result.durationMs });
+          cancelStreamRef.current = null;
+          completeSession(sessionId, result);
+          refreshUser();
+          const dur = result.durationMs ? ` in ${(result.durationMs / 1000).toFixed(1)}s` : '';
+          toast.success(`Task completed${dur}`);
+        },
+        onError: error => {
+          dbg('error', `gemini onError: ${error}`, { sessionId });
+          cancelStreamRef.current = null;
+          const msg = error.length > 300 ? error.slice(0, 300) + '…' : error;
+          failSession(sessionId, msg);
+          toast.error(msg.length > 80 ? msg.slice(0, 80) + '…' : msg);
+        },
+      });
+      cancelStreamRef.current = cancel;
+      return;
+    }
+
+    // ── Backend streaming path (fallback when no Gemini key) ──────────────────
     const streamMode = mode as 'react' | 'multi' | 'orchestrate';
     const body = mode === 'react' ? { task, maxSteps: 5 } : { task };
 
